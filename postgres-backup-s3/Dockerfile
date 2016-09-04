@@ -1,4 +1,4 @@
-FROM alpine:edge
+FROM alpine:3.4
 MAINTAINER Johannes Schickling "schickling.j@gmail.com"
 
 ADD install.sh install.sh
