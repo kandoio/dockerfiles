@@ -43,6 +43,10 @@ if [ "${POSTGRES_PASSWORD}" = "**None**" ]; then
   exit 1
 fi
 
+# Nasty! alpine does not play well with ndots.
+cp /etc/resolv.conf /tmp/resolv.conf.orig
+sed 's/^\(options ndots.*\)/#\1/g' /tmp/resolv.conf.orig > /etc/resolv.conf
+
 # env vars needed for aws tools
 export AWS_ACCESS_KEY_ID=$S3_ACCESS_KEY_ID
 export AWS_SECRET_ACCESS_KEY=$S3_SECRET_ACCESS_KEY
