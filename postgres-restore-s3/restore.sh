@@ -87,5 +87,5 @@ echo "Restore complete"
 
 if [ "${SLEEP}" == "yes" ]; then
 	echo "Sleeping"
-	cat
+	tail -f /dev/null
 fi

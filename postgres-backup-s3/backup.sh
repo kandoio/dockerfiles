@@ -67,5 +67,5 @@ echo "SQL backup uploaded successfully"
 
 if [ "${SLEEP}" == "yes" ]; then
 	echo "Sleeping"
-	cat
+	tail -f /dev/null
 fi
