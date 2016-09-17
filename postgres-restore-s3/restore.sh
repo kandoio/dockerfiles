@@ -64,6 +64,16 @@ echo "Fetching ${LATEST_BACKUP} from S3"
 aws s3 cp s3://$S3_BUCKET/$S3_PREFIX/${LATEST_BACKUP} dump.sql.gz
 gzip -d dump.sql.gz
 
+echo "Waiting for DB to be available"
+
+NEXT_WAIT_TIME=0
+NUMBER_OF_WAITS=10
+WAIT_CMD="psql $POSTGRES_HOST_OPTS -d $POSTGRES_DATABASE -c \"select 'It is running'\" | grep 'It is running'"
+until eval "${WAIT_CMD}" || [ ${NEXT_WAIT_TIME} -eq ${NUMBER_OF_WAITS} ]; do
+	sleep $(( NEXT_WAIT_TIME++ ))
+done
+eval ${WAIT_CMD}
+
 if [ "${DROP_PUBLIC}" == "yes" ]; then
 	echo "Recreating the public schema"
 	psql $POSTGRES_HOST_OPTS -d $POSTGRES_DATABASE -c "drop schema public cascade; create schema public;"
