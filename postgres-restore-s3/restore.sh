@@ -85,3 +85,7 @@ psql $POSTGRES_HOST_OPTS -d $POSTGRES_DATABASE < dump.sql
 
 echo "Restore complete"
 
+if [ "${SLEEP}" == "yes" ]; then
+	echo "Sleeping"
+	cat
+fi
