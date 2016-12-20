@@ -55,13 +55,14 @@ export AWS_DEFAULT_REGION=$S3_REGION
 export PGPASSWORD=$POSTGRES_PASSWORD
 POSTGRES_HOST_OPTS="-h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER"
 
-echo "Finding latest backup"
+if [ -z "${BACKUP}" ]; then
+	echo "Finding latest backup"
+	BACKUP=$(aws s3 ls s3://$S3_BUCKET/$S3_PREFIX/ | sort | tail -n 1 | awk '{ print $4 }')
+fi
 
-LATEST_BACKUP=$(aws s3 ls s3://$S3_BUCKET/$S3_PREFIX/ | sort | tail -n 1 | awk '{ print $4 }')
+echo "Fetching ${BACKUP} from S3"
 
-echo "Fetching ${LATEST_BACKUP} from S3"
-
-aws s3 cp s3://$S3_BUCKET/$S3_PREFIX/${LATEST_BACKUP} dump.sql.gz
+aws s3 cp s3://$S3_BUCKET/$S3_PREFIX/${BACKUP} dump.sql.gz
 gzip -d dump.sql.gz
 
 echo "Waiting for DB to be available"
