@@ -11,4 +11,6 @@ RUN apk add --no-cache --virtual .fetch-deps \
   && rm -rf /tmp/oauth2* \
   && apk del .fetch-deps
 
+RUN apk add --no-cache ca-certificates
+
 ENTRYPOINT ["/oauth2_proxy"]
