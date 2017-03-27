@@ -7,11 +7,6 @@ if [ -n "${GS_SERVICE_KEY_FILE}" ]; then
   gcloud auth activate-service-account --key-file ${GS_SERVICE_KEY_FILE}
 fi
 
-if [ "${GS_BUCKET}" = "**None**" ]; then
-  echo "You need to set the GS_BUCKET environment variable."
-  exit 1
-fi
-
 if [ "${POSTGRES_DATABASE}" = "**None**" ]; then
   echo "You need to set the POSTGRES_DATABASE environment variable."
   exit 1
@@ -42,17 +37,38 @@ cp /etc/resolv.conf /tmp/resolv.conf.orig
 sed 's/^\(options ndots.*\)/#\1/g' /tmp/resolv.conf.orig > /etc/resolv.conf
 
 export PGPASSWORD=$POSTGRES_PASSWORD
-POSTGRES_HOST_OPTS="-h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER $POSTGRES_EXTRA_OPTS"
+POSTGRES_HOST_OPTS="-h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER"
 
-echo "Creating dump of ${POSTGRES_DATABASE} database from ${POSTGRES_HOST}..."
+if [ -z "${BACKUP}" ]; then
+	echo "Finding latest backup"
+	BACKUP=$(gsutil ls gs://$GS_BUCKET/$GS_PREFIX/ | sort | tail -n 1)
+fi
 
-pg_dump $POSTGRES_HOST_OPTS $POSTGRES_DATABASE | gzip > dump.sql.gz
+echo "Fetching ${BACKUP} from GS"
 
-echo "Uploading dump to $GS_BUCKET"
+gsutil cp ${BACKUP} dump.sql.gz
+gzip -d dump.sql.gz
 
-gsutil cp dump.sql.gz gs://$GS_BUCKET/$GS_PREFIX/$(date +"%Y-%m-%dT%H:%M:%SZ").sql.gz || exit 2
+echo "Waiting for DB to be available"
 
-echo "SQL backup uploaded successfully"
+NEXT_WAIT_TIME=0
+NUMBER_OF_WAITS=10
+WAIT_CMD="psql $POSTGRES_HOST_OPTS -d $POSTGRES_DATABASE -c \"select 'It is running'\" | grep 'It is running'"
+until eval "${WAIT_CMD}" || [ ${NEXT_WAIT_TIME} -eq ${NUMBER_OF_WAITS} ]; do
+	sleep $(( NEXT_WAIT_TIME++ ))
+done
+eval ${WAIT_CMD}
+
+if [ "${DROP_PUBLIC}" == "yes" ]; then
+	echo "Recreating the public schema"
+	psql $POSTGRES_HOST_OPTS -d $POSTGRES_DATABASE -c "drop schema public cascade; create schema public;"
+fi
+
+echo "Restoring ${LATEST_BACKUP}"
+
+psql $POSTGRES_HOST_OPTS -d $POSTGRES_DATABASE < dump.sql
+
+echo "Restore complete"
 
 if [ "${SLEEP}" == "yes" ]; then
 	echo "Sleeping"
