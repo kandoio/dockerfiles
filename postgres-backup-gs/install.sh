@@ -4,7 +4,7 @@
 set -e
 
 # install pg_dump
-apk add --no-cache 'postgresql>9.5.0'
+apk add --no-cache postgresql
 
 # install gcloud sdk
 apk add --no-cache bash curl ca-certificates python

@@ -61,7 +61,13 @@ eval ${WAIT_CMD}
 
 if [ "${DROP_PUBLIC}" == "yes" ]; then
 	echo "Recreating the public schema"
-	psql $POSTGRES_HOST_OPTS -d $POSTGRES_DATABASE -c "drop schema public cascade; create schema public;"
+	psql $POSTGRES_HOST_OPTS -d $POSTGRES_DATABASE -c "drop schema if exists public cascade; create schema public;"
+fi
+
+if [ "${DROP_PUBLIC_TABLES}" == "yes" ]; then
+        echo "Dropping the public tables"
+	sql=$(psql $POSTGRES_HOST_OPTS -d $POSTGRES_DATABASE -P "tuples_only" -c "select 'drop table if exists \"' || tablename || '\" cascade;' from pg_tables where schemaname = 'public';")
+	psql $POSTGRES_HOST_OPTS -d $POSTGRES_DATABASE -c "${sql}"
 fi
 
 echo "Restoring ${LATEST_BACKUP}"

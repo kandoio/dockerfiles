@@ -13,6 +13,7 @@ ENV POSTGRES_PASSWORD **None**
 ENV GS_BUCKET **None**
 ENV GS_PREFIX 'backup'
 ENV DROP_PUBLIC 'no'
+ENV DROP_PUBLIC_TABLES 'no'
 
 ADD restore.sh restore.sh
 
