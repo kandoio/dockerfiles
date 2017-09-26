@@ -1,3 +1,3 @@
-FROM node:6.10
+FROM node:6.11.3
 
-RUN npm install -g yarn@0.23.2
+RUN npm install -g yarn@1.1.0
